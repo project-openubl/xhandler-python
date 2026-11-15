@@ -31,6 +31,8 @@ XHANDLER_E2E=true uv run pytest tests/test_e2e.py  # crea, firma y envía una fa
   conformidad (`testdata/conformance/`). No los edites a mano. La versión del paquete es la del
   núcleo, y una versión solo se publica con el núcleo de la versión igual de xhandler-rust:
   `make verify-core` lo comprueba.
+  Estos comandos descargan el `core.sh` de xhandler-rust (`xhandler-wasm/core.sh`) del tag del
+  núcleo; `CORE_SH=<ruta>` usa una copia local, p. ej. al cambiarlo allá.
 - En Python está lo que necesita IO: el cliente HTTP (httpx), los reintentos y el caché de tokens
   (`src/xhandler/xsender/`).
 - Los nombres (`FileSender`, `SunatClient`, `SigningKey`...) se mantienen iguales en Go, Python y
