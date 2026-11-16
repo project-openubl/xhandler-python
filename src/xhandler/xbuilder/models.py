@@ -190,6 +190,29 @@ class DocumentoRelacionado(_Model):
     serie_numero: str
 
 
+class TipoFormaPago(str, Enum):
+    """Tipo de forma de pago"""
+    CREDITO = 'Credito'
+    CONTADO = 'Contado'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class CuotaPago(_Model):
+    """Cuota de pago"""
+    importe: PlainDecimal
+    fecha_pago: date
+
+
+class FormaPago(_Model):
+    """Forma de pago. A missing `tipo` is filled in by the enricher, and
+    payment in full ("contado") has no `cuotas`."""
+    tipo: TipoFormaPago | None = None
+    cuotas: list[CuotaPago] = Field(default_factory=list)
+    total: PlainDecimal | None = None
+
+
 class CreditNote(_Model):
     """Nota de credito"""
     kind: ClassVar[str] = 'CreditNote'
@@ -216,12 +239,11 @@ class CreditNote(_Model):
     guias: list[Guia] = Field(default_factory=list)
     documentos_relacionados: list[DocumentoRelacionado] = Field(default_factory=list)
     orden_compra: str | None = None
-
-
-class CuotaPago(_Model):
-    """Cuota de pago"""
-    importe: PlainDecimal
-    fecha_pago: date
+    forma_pago: FormaPago | None = None
+    """The corrected amount owed and installments of the factura it
+    modifies: required for `tipo_nota` "13" (Catalog9, ajustes de montos
+    y/o fechas de pago) and refused for the others. Unlike an invoice's,
+    it isn't filled in when missing."""
 
 
 class DebitNote(_Model):
@@ -427,20 +449,6 @@ class Detraccion(_Model):
     """Catalog54"""
     porcentaje: PlainDecimal
     monto: PlainDecimal | None = None
-
-
-class TipoFormaPago(str, Enum):
-    """Tipo de forma de pago"""
-    CREDITO = 'Credito'
-    CONTADO = 'Contado'
-
-
-class FormaPago(_Model):
-    """Forma de pago. A missing `tipo` is filled in by the enricher, and
-    payment in full ("contado") has no `cuotas`."""
-    tipo: TipoFormaPago | None = None
-    cuotas: list[CuotaPago] = Field(default_factory=list)
-    total: PlainDecimal | None = None
 
 
 class GuiaEmbebida(_Model):
