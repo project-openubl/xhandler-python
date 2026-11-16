@@ -36,7 +36,7 @@ pythonpath = ["tests"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["src/xhandler/xbuilder/models.py"]
+extend-exclude = ["src/xhandler/xbuilder/models.py", "src/xhandler/xsender/models_gen.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

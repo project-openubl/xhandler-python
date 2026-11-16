@@ -1,5 +1,5 @@
-# The core (src/xhandler/_core/xhandler.wasm, src/xhandler/xbuilder/models.py and
-# testdata/conformance) comes from xhandler-rust:
+# The core (src/xhandler/_core/xhandler.wasm, the generated src/xhandler/xbuilder/models.py
+# and src/xhandler/xsender/models_gen.py, and testdata/conformance) comes from xhandler-rust:
 #
 #   make sync CORE=<version>   the xhandler-rust v<version> release
 #   make sync                  a checkout of xhandler-rust (RUST_REPO), for development
@@ -13,7 +13,8 @@ RUST_REPO ?= ../xhandler-rust
 CORE ?=
 DIST := $(if $(CORE),.dist,$(RUST_REPO)/dist)
 
-SYNCED := src/xhandler/_core/xhandler.wasm src/xhandler/_core/VERSION src/xhandler/xbuilder/models.py testdata/conformance
+SYNCED := src/xhandler/_core/xhandler.wasm src/xhandler/_core/VERSION src/xhandler/xbuilder/models.py \
+	src/xhandler/xsender/models_gen.py testdata/conformance
 
 # core.sh syncs and verifies a released core. It lives in xhandler-rust, next to the release
 # format it reads, and is downloaded from the tag of the core at hand (from main for a core
@@ -31,6 +32,7 @@ core_sh = $(if $(CORE_SH),bash $(CORE_SH) $(2),script=$$(mktemp) && trap 'rm -f 
 sync: dist
 	cp $(DIST)/xhandler.wasm $(DIST)/VERSION src/xhandler/_core/
 	cp $(DIST)/models/python/models.py src/xhandler/xbuilder/models.py
+	cp $(DIST)/models/python/xsender/models_gen.py src/xhandler/xsender/models_gen.py
 	rm -rf testdata/conformance && cp -r $(DIST)/conformance testdata/conformance
 	$(if $(CORE),rm -rf $(DIST))
 
