@@ -1,35 +1,49 @@
-"""Inputs and answers of the SUNAT services."""
+"""Inputs of the SUNAT services, and the answers: generated from the core's
+schema in models_gen.py, re-exported here."""
 
 from __future__ import annotations
 
-import base64
 from collections.abc import Iterator
-from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, Field
 
+# Bytes (raw bytes, base64 in JSON) also types the zip of File
+from xhandler.xsender.models_gen import (
+    CDR,
+    Bytes,
+    ConsultResult,
+    ConsultStatus,
+    Fault,
+    NoCDR,
+    SendFileAnswer,
+    Status,
+    VerifyResult,
+)
 
-def _from_base64(value: object) -> object:
-    return base64.b64decode(value) if isinstance(value, str) else value
-
-
-Bytes = Annotated[
-    bytes,
-    BeforeValidator(_from_base64),
-    PlainSerializer(lambda b: base64.b64encode(b).decode(), return_type=str, when_used="json"),
+__all__ = [
+    "BILL_CONSULT_SERVICE_URL",
+    "BILL_VALID_SERVICE_URL",
+    "CDR",
+    "ConsultDocument",
+    "ConsultResult",
+    "ConsultStatus",
+    "Credentials",
+    "Fault",
+    "File",
+    "NoCDR",
+    "SendFileAnswer",
+    "SendResult",
+    "Status",
+    "Target",
+    "URLs",
+    "ValidateCDP",
+    "VerifyResult",
 ]
-"""Raw bytes in Python, base64 in the JSON of the core."""
 
 
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class _Answer(BaseModel):
-    """An answer of the core: ignores the fields a newer core adds."""
-
-    model_config = ConfigDict(extra="ignore", frozen=True)
 
 
 class URLs(_Model):
@@ -121,86 +135,10 @@ class ValidateCDP(ConsultDocument):
     numero_autorizacion: str | None = None
 
 
-class Status(str, Enum):
-    """The SUNAT verdict of a document; prints as SUNAT says it, e.g. ACEPTADO."""
+class SendResult(SendFileAnswer):
+    """The answer to a sent file (a CDR, a ticket to verify later or a fault)
+    and where it went."""
 
-    ACCEPTED = "ACEPTADO"
-    REJECTED = "RECHAZADO"
-    EXCEPTION = "EXCEPCION"
-    IN_PROGRESS = "EN_PROCESO"
-    UNKNOWN = "UNKNOWN"
-
-    def __str__(self) -> str:
-        return self.value
-
-
-class CDR(_Answer):
-    """The receipt SUNAT gives back (Constancia de Recepcion)."""
-
-    zip: Bytes
-    response_code: str
-    description: str
-    notes: list[str]
-    document_description: str | None = None
-    """For an accepted guía de remisión, the URL its printed copy's QR code must
-    encode; None for other documents (and with a core older than 6.0.0-alpha.2)."""
-    status: Status
-    status_code: str | None = None
-    """The ticket status, only when verifying a ticket."""
-
-
-class Fault(_Answer):
-    """An error answered by SUNAT."""
-
-    code: str
-    """SUNAT's code as given: the SOAP faultcode (e.g. "soap-env:Client.0111") or
-    the error code of a REST answer (e.g. "1033")."""
-    sunat_code: int | None = None
-    """The number in ``code`` (111), when it has one."""
-    http_status: int | None = None
-    """The status of the answer, e.g. 500 for SOAP faults or 422 for REST errors."""
-    message: str
-    status: Status
-
-
-class NoCDR(_Answer):
-    """A ticket status without CDR, e.g. "98" (in progress)."""
-
-    status_code: str
-    status: Status
-
-
-class SendResult(_Answer):
-    """The answer to a sent file: a CDR, a ticket to verify later (summaries,
-    voided documents, packs, guias) or a fault."""
-
-    cdr: CDR | None = None
-    ticket: str | None = None
-    fault: Fault | None = None
     send_target: Target
     verify_ticket_target: Target | None = None
     """Where the ticket is verified."""
-
-
-class VerifyResult(_Answer):
-    """The answer to a ticket: a CDR, no CDR yet (e.g. in progress) or a fault."""
-
-    cdr: CDR | None = None
-    no_cdr: NoCDR | None = None
-    fault: Fault | None = None
-
-
-class ConsultStatus(_Answer):
-    """e.g. "0001" (accepted) for get_status, or "0" for validate_cdp."""
-
-    status_code: str
-    status_message: str | None = None
-    cdr_zip: Bytes | None = None
-    """The CDR of get_status_cdr."""
-
-
-class ConsultResult(_Answer):
-    """The answer of the consult and validation services."""
-
-    status: ConsultStatus | None = None
-    fault: Fault | None = None
