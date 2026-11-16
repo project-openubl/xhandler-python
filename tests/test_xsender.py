@@ -8,6 +8,7 @@ from conformance import cases
 from xhandler import ErrorKind, XhandlerError
 from xhandler.xsender import (
     BILL_CONSULT_SERVICE_URL,
+    CDR,
     ConsultDocument,
     Credentials,
     FileSender,
@@ -65,11 +66,30 @@ def test_send_file_reads_the_cdr() -> None:
     assert result.cdr is not None
     assert result.cdr.status is Status.ACCEPTED
     assert result.cdr.zip
+    assert result.cdr.document_description is None
     assert result.send_target.url == URLs.beta().invoice
     assert result.verify_ticket_target is None
     request = sunat.requests[0]
     assert request.headers["SOAPAction"] == "urn:sendBill"
     assert str(request.url) == URLs.beta().invoice
+
+
+def test_cdrs_carry_the_document_description() -> None:
+    """A newer core may add fields: the answers keep reading"""
+    cdr = CDR.model_validate(
+        {
+            "zip": "",
+            "response_code": "0",
+            "description": "La Guia numero T001-1, ha sido aceptada",
+            "notes": [],
+            "document_description": "https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=abc",
+            "status": "ACEPTADO",
+            "added_by_a_newer_core": True,
+        }
+    )
+    assert cdr.document_description == (
+        "https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=abc"
+    )
 
 
 def test_send_file_reads_faults() -> None:

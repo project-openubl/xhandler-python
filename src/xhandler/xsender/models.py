@@ -26,6 +26,12 @@ class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class _Answer(BaseModel):
+    """An answer of the core: ignores the fields a newer core adds."""
+
+    model_config = ConfigDict(extra="ignore", frozen=True)
+
+
 class URLs(_Model):
     """The SUNAT services where a company sends its documents."""
 
@@ -128,19 +134,22 @@ class Status(str, Enum):
         return self.value
 
 
-class CDR(_Model):
+class CDR(_Answer):
     """The receipt SUNAT gives back (Constancia de Recepcion)."""
 
     zip: Bytes
     response_code: str
     description: str
     notes: list[str]
+    document_description: str | None = None
+    """For an accepted guía de remisión, the URL its printed copy's QR code must
+    encode; None for other documents (and with a core older than 6.0.0-alpha.2)."""
     status: Status
     status_code: str | None = None
     """The ticket status, only when verifying a ticket."""
 
 
-class Fault(_Model):
+class Fault(_Answer):
     """An error answered by SUNAT."""
 
     code: str
@@ -154,14 +163,14 @@ class Fault(_Model):
     status: Status
 
 
-class NoCDR(_Model):
+class NoCDR(_Answer):
     """A ticket status without CDR, e.g. "98" (in progress)."""
 
     status_code: str
     status: Status
 
 
-class SendResult(_Model):
+class SendResult(_Answer):
     """The answer to a sent file: a CDR, a ticket to verify later (summaries,
     voided documents, packs, guias) or a fault."""
 
@@ -173,7 +182,7 @@ class SendResult(_Model):
     """Where the ticket is verified."""
 
 
-class VerifyResult(_Model):
+class VerifyResult(_Answer):
     """The answer to a ticket: a CDR, no CDR yet (e.g. in progress) or a fault."""
 
     cdr: CDR | None = None
@@ -181,7 +190,7 @@ class VerifyResult(_Model):
     fault: Fault | None = None
 
 
-class ConsultStatus(_Model):
+class ConsultStatus(_Answer):
     """e.g. "0001" (accepted) for get_status, or "0" for validate_cdp."""
 
     status_code: str
@@ -190,7 +199,7 @@ class ConsultStatus(_Model):
     """The CDR of get_status_cdr."""
 
 
-class ConsultResult(_Model):
+class ConsultResult(_Answer):
     """The answer of the consult and validation services."""
 
     status: ConsultStatus | None = None
